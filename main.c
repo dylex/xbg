@@ -24,6 +24,7 @@ static bool AscDec = false;
 static bool GeoPos = false;
 static bool Degrees = true;
 static bool NowSet = false;
+static bool Moon = false;
 static time_t Now;
 static struct coords Loc;
 
@@ -58,23 +59,15 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 	switch (key)
 	{
 		case '*':
-			LatLon = AltAz = AscDec = GeoPos = true;
+			LatLon = AltAz = AscDec = GeoPos = Moon = true;
 			Fmt = "%c";
 			break;
 
-		case 'f':
-			ReadFmt = optarg;
-			break;
-		case 'F':
-			ReadFmt = NULL;
-			break;
+		case 'f': ReadFmt = optarg; break;
+		case 'F': ReadFmt = NULL; break;
 
-		case 't':
-			Fmt = optarg ?: "%c";
-			break;
-		case 'T':
-			Fmt = NULL;
-			break;
+		case 't': Fmt = optarg ?: "%c"; break;
+		case 'T': Fmt = NULL; break;
 
 		case '0':
 			RiseSet = true;
@@ -82,37 +75,23 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 				Fmt = "%c";
 			break;
 
-		case 'g':
-			GeoPos = true;
-			break;
-		case 'G':
-			GeoPos = false;
-			break;
+		case 'g': GeoPos = true; break;
+		case 'G': GeoPos = false; break;
 
-		case 'l':
-			LatLon = true;
-			break;
-		case 'L':
-			LatLon = false;
-			break;
+		case 'l': LatLon = true; break;
+		case 'L': LatLon = false; break;
 
-		case 'a':
-			AltAz = true;
-			break;
-		case 'A':
-			AltAz = false;
-			break;
+		case 'a': AltAz = true; break;
+		case 'A': AltAz = false; break;
 
-		case 'd':
-			AscDec = true;
-			break;
-		case 'D':
-			AscDec = false;
-			break;
+		case 'd': AscDec = true; break;
+		case 'D': AscDec = false; break;
 
-		case 'r':
-			Degrees = false;
-			break;
+		case 'm': Moon = true; break;
+		case 'M': Moon = false; break; 
+
+		case 'r': Degrees = false; break;
+		case 'R': Degrees = true; break;
 
 		case ARGP_KEY_ARGS:
 			while (1) switch (state->argc - state->next)
@@ -159,7 +138,7 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 					break;
 
 				default:
-					argp_error(state, "unexpected argument: %s", optarg);
+					argp_error(state, "unexpected argument(s)");
 			}
 
 		case ARGP_KEY_NO_ARGS:
@@ -197,7 +176,10 @@ static struct option getopt_options[] = {
 	ARG("no-altaz", 'A', NULL, ARG_NONE, "don't print the altitude and azimuth of the sun"),
 	ARG("ascdec", 'd', NULL, ARG_NONE, "print the ascension and declination of the sun"),
 	ARG("no-ascdec", 'D', NULL, ARG_NONE, "don't print the ascension and declination of the sun [default]"),
-	ARG("radians", 'r', NULL, ARG_NONE, "print angles in radians [degrees]"),
+	ARG("moon", 'm', NULL, ARG_NONE, "print the phase of the moon"),
+	ARG("no-moon", 'M', NULL, ARG_NONE, "don't print the phase of the moon [default]"),
+	ARG("radians", 'r', NULL, ARG_NONE, "print angles in radians"),
+	ARG("degrees", 'R', NULL, ARG_NONE, "print angles in degrees [default]"),
 	ARG("all", '*', NULL, ARG_NONE, "enable all display modes"),
 	{}
 };
@@ -208,7 +190,7 @@ static const struct argp argp_parser = {
 	.parser =	&parse_opts,
 	.args_doc =	"[TIME]",
 	.doc =		"determine information about the location of the sun\v\
-Each type of information in displayed on one line.  If all information in requested, in is displayed in the following order: time, geopos, lat lon, alt az, asc dec.  Local coordinates are determined from ~/.geopos or /etc/geopos, or from the local timezone."
+Each type of information in displayed on one line.  If all information in requested, in is displayed in the following order: time, geopos, lat lon, alt az, asc dec, moon.  Local coordinates are determined from ~/.geopos or /etc/geopos, or from the local timezone."
 };
 #endif
 
@@ -271,6 +253,8 @@ int main(int argc, char **argv)
 		print_coords(location_altaz(Loc, sun));
 	if (AscDec)
 		print_coords(location_ascdec(Loc, sun));
+	if (Moon)
+		printf("%f\n", 100.*moon_phase(Now));
 
 	return 0;
 }

@@ -352,3 +352,80 @@ time_t find_riseset(time_t t)
 	}
 	return t;
 }
+
+/* from pom.c
+ * Copyright (c) 1989, 1993
+ *	The Regents of the University of California.  All rights reserved.
+ */
+
+#define PI M_PI
+#define EPOCH_MINUS_1970	(20 * 365 + 5 - 1) /* 20 years, 5 leaps, back 1 day to Jan 0 */
+#define	EPSILONg  279.403303	/* solar ecliptic long at EPOCH */
+#define	RHOg	  282.768422	/* solar ecliptic long of perigee at EPOCH */
+#define	ECCEN	  0.016713	/* solar orbit eccentricity */
+#define	lzero	  318.351648	/* lunar mean long at EPOCH */
+#define	Pzero	  36.340410	/* lunar mean long of perigee at EPOCH */
+#define	Nzero	  318.510107	/* lunar mean long of node at EPOCH */
+
+static double dtor(deg)
+	double deg;
+{
+	return(deg * PI / 180);
+}
+
+static void adj360(deg)
+	double *deg;
+{
+	for (;;)
+		if (*deg < 0)
+			*deg += 360;
+		else if (*deg > 360)
+			*deg -= 360;
+		else
+			break;
+}
+
+static double potm(days)
+	double days;
+{
+	double N, Msol, Ec, LambdaSol, l, Mm, Ev, Ac, A3, Mmprime;
+	double A4, lprime, V, ldprime, D, Nm;
+
+	N = 360 * days / 365.242191;				/* sec 46 #3 */
+	adj360(&N);
+	Msol = N + EPSILONg - RHOg;				/* sec 46 #4 */
+	adj360(&Msol);
+	Ec = 360 / PI * ECCEN * sin(dtor(Msol));		/* sec 46 #5 */
+	LambdaSol = N + Ec + EPSILONg;				/* sec 46 #6 */
+	adj360(&LambdaSol);
+	l = 13.1763966 * days + lzero;				/* sec 65 #4 */
+	adj360(&l);
+	Mm = l - (0.1114041 * days) - Pzero;			/* sec 65 #5 */
+	adj360(&Mm);
+	Nm = Nzero - (0.0529539 * days);			/* sec 65 #6 */
+	adj360(&Nm);
+	Ev = 1.2739 * sin(dtor(2*(l - LambdaSol) - Mm));	/* sec 65 #7 */
+	Ac = 0.1858 * sin(dtor(Msol));				/* sec 65 #8 */
+	A3 = 0.37 * sin(dtor(Msol));
+	Mmprime = Mm + Ev - Ac - A3;				/* sec 65 #9 */
+	Ec = 6.2886 * sin(dtor(Mmprime));			/* sec 65 #10 */
+	A4 = 0.214 * sin(dtor(2 * Mmprime));			/* sec 65 #11 */
+	lprime = l + Ev + Ec - Ac + A4;				/* sec 65 #12 */
+	V = 0.6583 * sin(dtor(2 * (lprime - LambdaSol)));	/* sec 65 #13 */
+	ldprime = lprime + V;					/* sec 65 #14 */
+	D = ldprime - LambdaSol;				/* sec 67 #2 */
+	return(50.0 * (1 - cos(dtor(D))));			/* sec 67 #3 */
+}
+
+double moon_phase(time_t now)
+{
+	double day = (now - EPOCH_MINUS_1970 * 86400) / 86400.0;
+	double pom = potm(day);
+	int sign = signbit(potm(day+0.1) - pom);
+	pom /= 100.;
+	if (sign)
+		pom = 1.0 - pom;
+	else
+		pom = pom - 1.0;
+	return pom;
+}

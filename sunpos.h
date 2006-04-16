@@ -16,5 +16,6 @@ struct coords sun_position(time_t) __attribute__((pure));
 struct coords degrees(struct coords) __attribute((const));
 struct coords radians(struct coords) __attribute((const));
 time_t find_riseset(time_t) __attribute__((pure));
+double moon_phase(time_t) __attribute__((const));
 
 #endif

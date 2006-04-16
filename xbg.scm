@@ -1,8 +1,22 @@
-(define (map f x y)
- (cond
-  ((null? x) x)
-  ((pair? x) (cons (map f (car x) (car y)) (map f (cdr x) (cdr y))))
-  (t (f x y))))
+(define (succ x) (+ x 1))
+(define (pred x) (- x 1))
+(define (recip x) (/ 1 x))
+
+(define (comp f g) (lambda (x) (f (g x))))
+
+(define map (lambda a
+ (let ((f (car a))
+       (l (cdr a)))
+  (letrec 
+   ((m (lambda (l)
+	(let ((x (car l)))
+	 (cond
+	  ((null? x) ())
+	  ((pair? x) (cons
+		      (m (mapcar car l))
+		      (m (mapcar cdr l))))
+	  (t (apply f l)))))))
+   (m l)))))
 
 (define (interp t a b x y)
  (+ x (* (- t a) (/ (- y x) (- b a)))))
@@ -18,20 +32,41 @@
     (imap t (car ax) (car by) (cdr ax) (cdr by))
     (pwi t r))))))
 
-(define (xbg out w h alt asc)
+(define xbg-img-dir "/home/dylan/media/pix/xbg/")
+
+(define (degnorm x)
+ (cond 
+  ((> x 180) (degnorm (- x 360)))
+  ((< x -180) (degnorm (+ x 360)))
+  (t x)))
+
+(define (drawable-size d)
+ (cons
+  (car (gimp-drawable-width d))
+  (car (gimp-drawable-height d))))
+
+(define (xbg out w h alt asc pom)
  (let* ((img (car (gimp-image-new w h RGB)))
 	(bg (car (gimp-layer-new img w h RGB-IMAGE "bg" 100 0)))
 	(grad (car (gimp-gradient-new "xbg")))
 	(dim (cons w h))
-	(dim2 (map / dim '(2 . 2)))
+	(dim1 (map pred dim))
+	(pix (lambda (xy) (map / xy dim1)))
+	(pos (lambda (xy) (map * dim1 xy)))
+	(posx (comp car pos))
+	(posy (comp cdr pos))
+
+	(border (pix '(50 . 50)))
+	(ascpos (lambda (asc) (pwi asc '(
+				(-180 0.5 . 1)
+				( -90 0   . 1)
+				( -45 0   . 0)
+				(  45 1   . 0)
+				(  90 1   . 1)
+				( 180 0.5 . 1)))))
 	(am (> asc 0))
-	(gstart (pwi (abs asc) (list
-				(cons 0 (cons (car dim2) 0))
-				(cons 45 (cons 0 0))
-				(cons 90 (cons 0 (cdr dim)))
-				(cons 180 (cons (cdr dim2) (cdr dim))))))
-        (gstart (if am gstart (cons (- (car dim) (car gstart)) (cdr gstart))))
-	(gend (map - dim gstart))
+	(gstart (ascpos asc))
+	(gend (map - '(1 . 1) gstart))
 	(gcs (pwi alt (list
 		       (cons -90  '(( 20  20  80) ( 20  20  80) ( 20 20 80)))
 		       (cons -32  '(( 60  60 120) ( 20  20 110) ( 20 20 80)))
@@ -52,6 +87,17 @@
 				  '((170 180 220) ( 62 191 250) ( 70 200 255))))
 		       (cons  32  '(( 60 190 240) (100 200 255) (100 170 250)))
 		       (cons  90  '((120 200 255) (140 200 250) (150 220 250))))))
+
+	(pom (/ pom 100))
+        (pomn 24)
+        (pomi (trunc (fmod (+ (* pomn (/ (succ pom) 2)) 0.5) pomn)))
+	(moonfile (string-append xbg-img-dir "moon-" (number->string pomi 10) ".png"))
+	(moonimg (car (gimp-file-load RUN-NONINTERACTIVE moonfile moonfile)))
+	(moonimgl (car (gimp-image-get-active-layer moonimg)))
+	(moon (car (gimp-layer-new-from-drawable moonimgl img)))
+	(moonasc (degnorm (+ asc (* 180 (succ pom)))))
+	(moonpos (map + (map * (ascpos moonasc) (map - '(1 . 1) (map + (pix (drawable-size moon)) (map * '(2 . 2) border)))) border))
+	(moonopa (pwi alt '((-32 . 100) (16 . 25))))
        )
   (gimp-image-undo-disable img)
   (gimp-image-add-layer img bg 0)
@@ -62,9 +108,16 @@
   (gimp-gradient-segment-set-right-color grad 1 (caddr gcs) 100)
   (gimp-context-set-gradient grad)
   (gimp-edit-blend bg CUSTOM-MODE 0 GRADIENT-RADIAL 100 0 REPEAT-NONE FALSE FALSE 0 0 TRUE
-   (car gstart) (cdr gstart) (car gend) (cdr gend))
+   (posx gstart) (posy gstart) (posx gend) (posy gend))
   (gimp-gradient-delete grad)
 
-  (let ((draw (car (gimp-image-flatten img))))
-   (file-ppm-save 1 1 draw out out 1))
+  (gimp-drawable-set-name moon "moon")
+  (gimp-image-add-layer img moon -1)
+  (gimp-layer-set-offsets moon (posx moonpos) (posy moonpos))
+  (gimp-layer-set-mode moon LIGHTEN-ONLY)
+  (gimp-layer-set-opacity moon moonopa)
+
+  (if (not (equal? "" out))
+   (let ((draw (car (gimp-image-flatten img))))
+    (file-ppm-save 1 1 draw out out 1)))
   img))
