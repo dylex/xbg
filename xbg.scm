@@ -1,0 +1,70 @@
+(define (map f x y)
+ (cond
+  ((null? x) x)
+  ((pair? x) (cons (map f (car x) (car y)) (map f (cdr x) (cdr y))))
+  (t (f x y))))
+
+(define (interp t a b x y)
+ (+ x (* (- t a) (/ (- y x) (- b a)))))
+(define (imap t a b x y)
+ (map (lambda (x y) (interp t a b x y)) x y))
+
+(define (pwi t l)
+ (let ((ax (car l))
+       (r (cdr l)))
+  (if (or (< t (car ax)) (null? r)) (cdr ax)
+  (let ((by (car r)))
+   (if (<= t (car by))
+    (imap t (car ax) (car by) (cdr ax) (cdr by))
+    (pwi t r))))))
+
+(define (xbg out w h alt asc)
+ (let* ((img (car (gimp-image-new w h RGB)))
+	(bg (car (gimp-layer-new img w h RGB-IMAGE "bg" 100 0)))
+	(grad (car (gimp-gradient-new "xbg")))
+	(dim (cons w h))
+	(dim2 (map / dim '(2 . 2)))
+	(am (> asc 0))
+	(gstart (pwi (abs asc) (list
+				(cons 0 (cons (car dim2) 0))
+				(cons 45 (cons 0 0))
+				(cons 90 (cons 0 (cdr dim)))
+				(cons 180 (cons (cdr dim2) (cdr dim))))))
+        (gstart (if am gstart (cons (- (car dim) (car gstart)) (cdr gstart))))
+	(gend (map - dim gstart))
+	(gcs (pwi alt (list
+		       (cons -90  '(( 20  20  80) ( 20  20  80) ( 20 20 80)))
+		       (cons -32  '(( 60  60 120) ( 20  20 110) ( 20 20 80)))
+		       (cons -10 (if am
+				  '(( 40  40 140) ( 40  40 120) ( 40 40  80))
+				  '((170 120 210) (100  90 170) ( 60 80 170))))
+		       (cons  -5 (if am
+				  '((200 200 170) (100 100 140) ( 40  40 100))
+				  '((230 150 240) (100 100 200) ( 80 120 180))))
+		       (cons   0 (if am
+				  '((240 240  80) (140 150 170) ( 80 100 160))
+				  '((250 200 190) ( 80 160 240) ( 70 140 210))))
+		       (cons   8 (if am
+				  '((240 250 170) (170 200 210) (100 130 200))
+				  '((185 190 235) ( 70 170 250) ( 55 180 250))))
+		       (cons  16 (if am
+				  '((230 230 235) (170 220 250) (100 150 220))
+				  '((170 180 220) ( 62 191 250) ( 70 200 255))))
+		       (cons  32  '(( 60 190 240) (100 200 255) (100 170 250)))
+		       (cons  90  '((120 200 255) (140 200 250) (150 220 250))))))
+       )
+  (gimp-image-undo-disable img)
+  (gimp-image-add-layer img bg 0)
+  (gimp-gradient-segment-range-split-uniform grad 0 0 2)
+  (gimp-gradient-segment-set-left-color  grad 0 (car   gcs) 100)
+  (gimp-gradient-segment-set-right-color grad 0 (cadr  gcs) 100)
+  (gimp-gradient-segment-set-left-color  grad 1 (cadr  gcs) 100)
+  (gimp-gradient-segment-set-right-color grad 1 (caddr gcs) 100)
+  (gimp-context-set-gradient grad)
+  (gimp-edit-blend bg CUSTOM-MODE 0 GRADIENT-RADIAL 100 0 REPEAT-NONE FALSE FALSE 0 0 TRUE
+   (car gstart) (cdr gstart) (car gend) (cdr gend))
+  (gimp-gradient-delete grad)
+
+  (let ((draw (car (gimp-image-flatten img))))
+   (file-ppm-save 1 1 draw out out 1))
+  img))
