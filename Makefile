@@ -4,8 +4,3 @@ LDFLAGS=-lm
 
 default: sunpos
 sunpos: main.o sunpos.o
-
-install: sunpos xbg.scm xbg.sh
-	install sunpos ~/bin
-	install xbg.scm ~/.gimp-2.2/scripts
-	install xbg.sh ~/bin/xbg

@@ -62,6 +62,10 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 			LatLon = AltAz = AscDec = GeoPos = Moon = true;
 			Fmt = "%c";
 			break;
+		case '!':
+			LatLon = AltAz = AscDec = GeoPos = Moon = false;
+			Fmt = NULL;
+			break;
 
 		case 'f': ReadFmt = optarg; break;
 		case 'F': ReadFmt = NULL; break;
@@ -181,6 +185,7 @@ static struct option getopt_options[] = {
 	ARG("radians", 'r', NULL, ARG_NONE, "print angles in radians"),
 	ARG("degrees", 'R', NULL, ARG_NONE, "print angles in degrees [default]"),
 	ARG("all", '*', NULL, ARG_NONE, "enable all display modes"),
+	ARG("none", '!', NULL, ARG_NONE, "disable all display modes"),
 	{}
 };
 
@@ -215,7 +220,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		state.next = optind;
-		int c = getopt_long(argc, argv, "f:Ft::TgG0lLaAdDr*", getopt_options, NULL);
+		int c = getopt_long(argc, argv, "f:Ft::TgG0lLaAdDmMrR*!", getopt_options, NULL);
 		if (c < 0)
 			break;
 		if (parse_opts(c, optarg, &state) != 0)
