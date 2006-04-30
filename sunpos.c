@@ -353,6 +353,21 @@ time_t find_riseset(time_t t)
 	return t;
 }
 
+time_t find_minmax(time_t t)
+{
+	int D = signbit(dangle(t));
+	time_t l = t;
+	time_t h = 12*3600;
+	while (h > 60)
+	{
+		h /= 2;
+		time_t m = l + h;
+		if (signbit(dangle(m)) == D)
+			l = m;
+	}
+	return l;
+}
+
 /* from pom.c
  * Copyright (c) 1989, 1993
  *	The Regents of the University of California.  All rights reserved.

@@ -16,7 +16,7 @@
 #include "sunpos.h"
 
 static char *ReadFmt = NULL;
-static bool RiseSet = false;
+static int Find = -1;
 static char *Fmt = NULL;
 static bool LatLon = false;
 static bool AltAz = true;
@@ -74,7 +74,8 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 		case 'T': Fmt = NULL; break;
 
 		case '0':
-			RiseSet = true;
+		case '1':
+			Find = (key == '1') ? 1 : 0;
 			if (!Fmt)
 				Fmt = "%c";
 			break;
@@ -174,6 +175,7 @@ static struct option getopt_options[] = {
 	ARG("geopos", 'g', NULL, ARG_NONE, "print the local geographic position used"),
 	ARG("no-geopos", 'G', NULL, ARG_NONE, "don't print the local geographic position [default]"),
 	ARG("riseset", '0', NULL, ARG_NONE, "find and use the next sun rise/set time (implies -t)"),
+	ARG("minmax", '1', NULL, ARG_NONE, "find and use the next sun noon/midnight time (implies -t)"),
 	ARG("latlon", 'l', NULL, ARG_NONE, "print the coordinates of the sun"),
 	ARG("no-latlon", 'L', NULL, ARG_NONE, "don't print the coordinates of the sun [default]"),
 	ARG("altaz", 'a', NULL, ARG_NONE, "print the altitude and azimuth of the sun [default]"),
@@ -220,7 +222,7 @@ int main(int argc, char **argv)
 	while (1)
 	{
 		state.next = optind;
-		int c = getopt_long(argc, argv, "f:Ft::TgG0lLaAdDmMrR*!", getopt_options, NULL);
+		int c = getopt_long(argc, argv, "f:Ft::TgG01lLaAdDmMrR*!", getopt_options, NULL);
 		if (c < 0)
 			break;
 		if (parse_opts(c, optarg, &state) != 0)
@@ -237,8 +239,10 @@ int main(int argc, char **argv)
 		time(&Now);
 	Loc = get_location();
 
-	if (RiseSet)
+	if (Find == 0)
 		Now = find_riseset(Now);
+	else if (Find == 1)
+		Now = find_minmax(Now);
 
 	struct coords sun = sun_location(Now);
 

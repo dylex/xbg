@@ -10,7 +10,7 @@ use Getopt::Std;
 our ($opt_x);
 getopts('x:');
 
-open GEOPOS, '<', '~/.geopos' or open GEOPOS, '<', '/etc/geopos' or die "can't get geopos\n";
+open GEOPOS, '<', "$ENV{HOME}/.geopos" or open GEOPOS, '<', '/etc/geopos' or die "can't get geopos\n";
 my ($geopos) = <GEOPOS>;
 close GEOPOS;
 my ($lat, $lon) = split ' ', $geopos;

@@ -34,4 +34,3 @@ for d in $displays ; do
 	xv -display "$d" -crop $x 0 $w $h -root +noresetroot -quit $img
 	x=$((x+w))
 done
-rm -f $img
