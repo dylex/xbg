@@ -54,7 +54,7 @@
 
 (define (%d x) (number->string x 10))
 
-(define (xbg out dim sunpos weather)
+(define (xbg out nout dim sunpos weather)
  (let* ((w (car dim))
 	(h (cdr dim))
 	(dim1 (map pred dim))
@@ -104,11 +104,11 @@
 	 (gstart sunloc)
 	 (gend (map - '(1 . 1) gstart))
 	 (gcs (pwi sunalt (list
-			   (cons -90  '(( 20  20  80) ( 20  20  80) ( 20 20 80)))
-			   (cons -32  '(( 60  60 120) ( 20  20 110) ( 20 20 80)))
+			   (cons -90  '(( 20  20  80) ( 15  15  60) ( 15 15 60)))
+			   (cons -32  '(( 40  40 100) ( 15  15  80) ( 15 15 60)))
 			   (cons -10 (if am
 				      '(( 40  40 140) ( 40  40 120) ( 40 40  80))
-				      '((170 120 210) (100  90 170) ( 60 80 170))))
+				      '((140 100 180) ( 70  60 120) ( 40 50 100))))
 			   (cons  -5 (if am
 				      '((200 200 170) (100 100 140) ( 40  40 100))
 				      '((230 150 240) (100 100 200) ( 80 120 180))))
@@ -212,7 +212,8 @@
      ))
 
     (let* ((wcondi (assoc (car weather)
-		    '((few . "sun")	  	(nfew . "sun")
+		    '((skc . "sun")		(nskc . "sun")
+		      (few . "sun")	  	(nfew . "sun")
 		      (sct . "partlysun") 	(nsct . "partlysun")
 		      (bkn . "partly")	  	(nbkn . "partly")
 		      (ovc . "cloudy") 	  	(novc . "cloudy")
@@ -251,8 +252,19 @@
    ))
 
   (if (notempty? out)
-   (let ((draw (car (gimp-image-flatten img))))
-    (file-ppm-save 1 1 draw out out 1)))
+   (let ((draw (car (gimp-image-flatten img)))
+   	  (tw w)
+   	  (nw (/ w nout)))
+    (letrec
+     ((save-part
+       (lambda (n)
+	(let ((outn (string-append out "." (%d n))))
+	 (file-xpm-save RUN-NONINTERACTIVE img draw outn outn 0)
+	 (if (< (succ n) nout)
+	  (begin
+	   (gimp-image-crop img (- w (* (succ n) nw)) h nw 0)
+	   (save-part (succ n))))))))
+     (save-part 0))))
 
   (gimp-image-undo-enable img)
   img))
