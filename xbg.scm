@@ -138,10 +138,12 @@
 
   (if (> sunalt 0)
    (let* ((bg (get-image-layer img -1))
+   	  (ang (* *pi* (/ sunasc 180)))
+	  (pos (cons (/ (+ (sin ang) 1) 2) (- 1 (cos ang))))
           ;(sun (gimp-layer-new img w h RGBA-IMAGE "sun" 100 NORMAL-MODE))
 	  ;(flare (gimp-layer-new img w h RGBA-IMAGE "flare" 50 SCREEN-MODE))
 	 )
-    (plug-in-flarefx RUN-NONINTERACTIVE img bg (posx sunloc) (posy sunloc))
+    (plug-in-flarefx RUN-NONINTERACTIVE img bg (posx pos) (posy pos))
     ;(gimp-image-add-layer img sun -1)
     ;(gimp-image-add-layer img flare -1)
    )
