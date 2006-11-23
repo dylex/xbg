@@ -2,6 +2,8 @@
 w=1920
 h=1200
 displays=":0.0"
+setroot="fvwm-root -r"
+#setroot="xv -root +noresetroot -quit"
 
 img=/tmp/xbg.xpm
 dir=`dirname $0`
@@ -31,6 +33,6 @@ $gimp -b "(begin $cmd (gimp-quit 1))" "(gimp-quit 1)" || exit 1
 [ -f "$img.0" ] || exit 1
 i=0
 for d in $displays ; do
-	DISPLAY=$d fvwm-root -r $img.$i
+	DISPLAY=$d $setroot $img.$i
 	i=$((i+1))
 done

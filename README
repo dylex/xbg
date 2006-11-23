@@ -1,0 +1,32 @@
+This is a gimp script and some supporting programs to generate an X background
+image reflecting the current weather.  It's not very well packaged at the
+moment, so it takes a little to set up.  It works on Linux and FreeBSD, but you
+can probably get it to run on any *nix.
+
+Requirements:
+ - gimp 2.2
+ - gcc
+ - fvwm-root, xv, or other program to set the X root image
+ - perl with modules:
+   - URI
+   - LWP
+   - XML::XPath
+
+Instructions:
+ - Run make.  It should build sunpos and install prism.ggr in
+   ~/.gimp-2.2/gradients.
+ - Edit xbg.sh and set w, h, and displays to the width, height, and X11
+   display(s).  (Multi-headed displays are assumed to be homogeneous.)  Set
+   setroot to a program that can display an xpm on root.
+ - Create /etc/geopos or ~/.geopos with a single line containing your latitude
+   and longitude.  E.g.: "40.7 -73.9".  (You can get this from google maps if
+   you don't know them.)
+ - Run ./xbg.sh.  If you just want to play, you can run ./xbg.sh -e to open the
+   image in gimp.
+
+License: BSD
+
+Author: Dylan Simon <dylan@dylex.net>
+  https://dylex.net:9947/~dylan/src
+
+Suggestions, improvements, patches, complaints welcome.
