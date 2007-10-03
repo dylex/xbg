@@ -68,10 +68,11 @@ my $mint = get('//data/parameters/temperature[@type="minimum"]/value[1]/text()')
 my $temp = get('//data/parameters/temperature[@type="hourly"]/value[1]/text()');
 my $pop = get('//data/parameters/probability-of-precipitation[@type="12 hour"]/value[1]/text()');
 my $cloud = get('//data/parameters/cloud-amount[@type="total"]/value[1]/text()');
-my $condicon = get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[1]/text()');
+my $condicon = get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[1]/text()') || get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[2]/text()');
 my $windspeed = get('//data/parameters/wind-speed[@type="sustained"]/value[1]/text()');
 my $winddir = get('//data/parameters/direction[@type="wind"]/value[1]/text()');
 my ($cond) = $condicon =~ /\/(\w*)\.jpg$/;
+$cond =~ s/([1-9]|10)0$//;
 
 print <<EOF;
 $cond
