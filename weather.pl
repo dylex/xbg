@@ -28,7 +28,7 @@ else
 		my $time = time;
 		my $tfmt = '%Y-%m-%dT%H:%M:%S%z';
 		my $begin = strftime($tfmt, localtime($time));
-		my $end = strftime($tfmt, localtime($time+86400));
+		my $end = strftime($tfmt, localtime($time+162000));
 
 		my $LWP = LWP::UserAgent->new;
 		my $uri = URI->new('http://www.weather.gov/forecasts/xml/SOAP_server/ndfdXMLclient.php');
@@ -63,15 +63,16 @@ sub get
 	$r
 }
 
-my $maxt = get('//data/parameters/temperature[@type="maximum"]/value[1]/text()');
-my $mint = get('//data/parameters/temperature[@type="minimum"]/value[1]/text()');
-my $temp = get('//data/parameters/temperature[@type="hourly"]/value[1]/text()');
-my $pop = get('//data/parameters/probability-of-precipitation[@type="12 hour"]/value[1]/text()');
-my $cloud = get('//data/parameters/cloud-amount[@type="total"]/value[1]/text()');
+my $maxt = get('//data/parameters/temperature[@type="maximum"]/value[1]/text()') || 0;
+my $mint = get('//data/parameters/temperature[@type="minimum"]/value[1]/text()') || 0;
+my $temp = get('//data/parameters/temperature[@type="hourly"]/value[1]/text()') || 0;
+my $pop = get('//data/parameters/probability-of-precipitation[@type="12 hour"]/value[1]/text()') || 0;
+my $cloud = get('//data/parameters/cloud-amount[@type="total"]/value[1]/text()') || 0;
 my $condicon = get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[1]/text()') || get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[2]/text()');
 my $windspeed = get('//data/parameters/wind-speed[@type="sustained"]/value[1]/text()');
 my $winddir = get('//data/parameters/direction[@type="wind"]/value[1]/text()');
 my ($cond) = $condicon =~ /\/(\w*)\.jpg$/;
+$cond ||= 'none';
 $cond =~ s/([1-9]|10)0$//;
 
 print <<EOF;

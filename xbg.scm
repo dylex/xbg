@@ -4,7 +4,7 @@
 
 (define (comp f g) (lambda (x) (f (g x))))
 
-(define map (lambda a
+(define mapall (lambda a
  (let ((f (car a))
        (l (cdr a)))
   (letrec 
@@ -15,13 +15,13 @@
 	  ((pair? x) (cons
 		      (m (mapcar car l))
 		      (m (mapcar cdr l))))
-	  (t (apply f l)))))))
+	  (#t (apply f l)))))))
    (m l)))))
 
 (define (interp t a b x y)
- (+ x (* (- t a) (/ (- y x) (- b a)))))
+ (if (= a b) 0 (+ x (* (- t a) (/ (- y x) (- b a))))))
 (define (imap t a b x y)
- (map (lambda (x y) (interp t a b x y)) x y))
+ (mapall (lambda (x y) (interp t a b x y)) x y))
 
 (define (pwi t l)
  (let ((ax (car l))
@@ -36,7 +36,7 @@
  (cond 
   ((> x 180) (degnorm (- x 360)))
   ((< x -180) (degnorm (+ x 360)))
-  (t x)))
+  (#t x)))
 
 (define (drawable-size d)
  (if d
@@ -57,9 +57,9 @@
 (define (xbg out nout dim sunpos weather)
  (let* ((w (car dim))
 	(h (cdr dim))
-	(dim1 (map pred dim))
-	(pix (lambda (xy) (map / xy dim1)))
-	(pos (lambda (xy) (map * dim1 xy)))
+	(dim1 (mapall pred dim))
+	(pix (lambda (xy) (mapall / xy dim1)))
+	(pos (lambda (xy) (mapall * dim1 xy)))
 	(posx (comp car pos))
 	(posy (comp cdr pos))
 
@@ -80,7 +80,7 @@
 	(add-text (lambda (text pos align color size)
 		   (let* ((font "Sans")
 			  (ext (gimp-text-get-extents-fontname text size PIXELS font))
-			  (pos (map - pos (map * align (cons (car ext) (cadr ext))))))
+			  (pos (mapall - pos (mapall * align (cons (car ext) (cadr ext))))))
 		    (gimp-context-set-foreground color)
 		    (car (gimp-text-fontname img -1 (car pos) (cdr pos) text 0 TRUE size PIXELS font)))))
 	(ascpos (lambda (asc) (pwi asc
@@ -101,7 +101,7 @@
   (let* ((bg (car (gimp-layer-new img w h RGB-IMAGE "bg" 100 0)))
 	 (grad (car (gimp-gradient-new "xbg")))
 	 (gstart sunloc)
-	 (gend (map - '(1 . 1) gstart))
+	 (gend (mapall - '(1 . 1) gstart))
 	 (gcs (pwi sunalt (list
 			   (cons -90  '(( 20  20  80) ( 15  15  60) ( 15 15 60)))
 			   (cons -32  '(( 40  40 100) ( 15  15  80) ( 15 15 60)))
@@ -161,7 +161,7 @@
 	 (pomi (trunc (fmod (+ (* pomn (/ (succ pom) 2)) 0.5) pomn)))
 	 (moon (add-img (string-append "moon-" (%d pomi))))
 	 (moonasc (degnorm (+ sunasc (* 180 (succ pom)))))
-	 (moonpos (map + (map * (ascpos moonasc) (map - '(1 . 1) (map + (pix (drawable-size moon)) (map * '(2 . 2) border)))) border))
+	 (moonpos (mapall + (mapall * (ascpos moonasc) (mapall - '(1 . 1) (mapall + (pix (drawable-size moon)) (mapall * '(2 . 2) border)))) border))
 	 (moonopa (pwi sunalt '((-32 . 100) (16 . 25)))))
    (gimp-image-add-layer img moon -1)
    (gimp-layer-set-offsets moon (posx moonpos) (posy moonpos))
@@ -198,7 +198,7 @@
      (let* ((rp (nth 5 weather))
 	    (wspd (nth 6 weather))
 	    (wdir (nth 7 weather))
-	    (bowloc (map - '(1 . 1) sunloc))
+	    (bowloc (mapall - '(1 . 1) sunloc))
 	    (rain (car (gimp-layer-new img w h RGBA-IMAGE "rain" 100 ADDITION-MODE))))
       (gimp-image-add-layer img rain -1)
       (gimp-drawable-fill rain TRANSPARENT-FILL)
@@ -226,14 +226,15 @@
 		      (scttsra . "lightning")   (nscttsra . "lightning")
 		      (tsra . "lightning")	(ntsra . "lightning")
 		      (rasn . "rainsnow") 	(nrasn . "rainsnow")
+		      (raip . "rainhail") 	(nraip . "rainhail")
 		      (mix . "rainsnow") 	(mix . "rainsnow")
 		      (sn . "snow") 	  	(nsn . "snow")
 		      (fzra . "ice") 	  	(nfzra . "ice")
 		      (ip . "hail") 	  	(nip . "hail")
 		     )))
-	   (wcond (if wcondi (add-img (cdr wcondi))))
+	   (wcond (if wcondi (add-img (cdr wcondi)) #f))
 	   (wcsize (drawable-size wcond))
-	   (wcsize (if wcsize (map (lambda (x) (* x (/ bord (cdr wcsize)))) wcsize))))
+	   (wcsize (if wcond (mapall (lambda (x) (* x (/ bord (cdr wcsize)))) wcsize))))
      (if wcond
       (begin
        (gimp-image-add-layer img wcond -1)
