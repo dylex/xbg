@@ -308,6 +308,7 @@ struct coords get_location()
 	}
 	struct coords pos;
 	fscanf(f, "%lf %lf", &pos.x, &pos.y);
+	fclose(f);
 	Pos = radians(pos);
 	GotPos ++;
 	return Pos;
