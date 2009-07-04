@@ -23,7 +23,6 @@ static bool AltAz = true;
 static bool AscDec = false;
 static bool GeoPos = false;
 static bool Degrees = true;
-static bool NowSet = false;
 static bool Moon = false;
 static time_t Now;
 static struct coords Loc;
@@ -108,7 +107,7 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 					optarg = state->argv[state->next++];
 					if (ReadFmt)
 					{
-						struct tm ts;
+						struct tm ts = *localtime(&Now);
 						e = strptime(optarg, ReadFmt, &ts);
 						if (!e || *e)
 							argp_error(state, "invalid time format: %s", optarg);
@@ -125,7 +124,6 @@ static error_t parse_opts(int key, char *optarg, struct argp_state *state)
 						argp_error(state, "time format required (getdate not supported)");
 #endif
 					}
-					NowSet = true;
 					break;
 
 				case 2:
@@ -214,6 +212,8 @@ static inline void print_coords(struct coords c)
 
 int main(int argc, char **argv)
 {
+	time(&Now);
+
 #ifdef HAVE_ARGP
 	if ((errno = argp_parse(&argp_parser, argc, argv, 0, 0, 0)))
 		exit(1);
@@ -235,8 +235,6 @@ int main(int argc, char **argv)
 	parse_opts(ARGP_KEY_ARGS, NULL, &state);
 #endif
 
-	if (!NowSet)
-		time(&Now);
 	Loc = get_location();
 
 	if (Find == 0)

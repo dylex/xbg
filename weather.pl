@@ -32,6 +32,7 @@ else
 
 		my $LWP = LWP::UserAgent->new;
 		my $uri = URI->new('http://www.weather.gov/forecasts/xml/SOAP_server/ndfdXMLclient.php');
+		#my $uri = URI->new('http://www.weather.gov/forecasts/xml/sample_products/browser_interface/ndfdXMLclient.php');
 		$uri->query_form(
 				'lat' => $lat,
 				'lon' => $lon,

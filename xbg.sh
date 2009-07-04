@@ -6,6 +6,8 @@ setroot="fvwm-root -r"
 #setroot="xv -root +noresetroot -quit"
 
 img=/tmp/xbg.xpm
+lockfile -r0 $img.lock || exit $?
+trap "rm $img.lock" EXIT
 dir=`dirname $0`
 [ "$dir" ] && dir=$dir/
 gimp="gimp-console -i -c --batch-interpreter plug-in-script-fu-eval"
