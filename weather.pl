@@ -7,8 +7,8 @@ use POSIX qw(strftime);
 use XML::XPath;
 use Getopt::Std;
 
-our ($opt_x);
-getopts('x:');
+our ($opt_x, $opt_n, $opt_f);
+getopts('nfx:');
 
 open GEOPOS, '<', "$ENV{HOME}/.geopos" or open GEOPOS, '<', '/etc/geopos' or die "can't get geopos\n";
 my ($geopos) = <GEOPOS>;
@@ -23,7 +23,7 @@ if (defined $opt_x)
 else
 {
 	my $ndfdcache = "/tmp/ndfd-cache.xml";
-	if (!-r $ndfdcache or -M $ndfdcache > 0.05)
+	if (!$opt_n && (!-r $ndfdcache or -M $ndfdcache > 0.05 or $opt_f))
 	{
 		my $time = time;
 		my $tfmt = '%Y-%m-%dT%H:%M:%S%z';
