@@ -430,18 +430,12 @@ static double potm(days)
 	V = 0.6583 * sin(dtor(2 * (lprime - LambdaSol)));	/* sec 65 #13 */
 	ldprime = lprime + V;					/* sec 65 #14 */
 	D = ldprime - LambdaSol;				/* sec 67 #2 */
-	return(50.0 * (1 - cos(dtor(D))));			/* sec 67 #3 */
+	return(D);
 }
 
 double moon_phase(time_t now)
 {
 	double day = (now - EPOCH_MINUS_1970 * 86400) / 86400.0;
 	double pom = potm(day);
-	int sign = signbit(potm(day+0.1) - pom);
-	pom /= 100.;
-	if (sign)
-		pom = 1.0 - pom;
-	else
-		pom = pom - 1.0;
 	return pom;
 }

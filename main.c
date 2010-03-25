@@ -261,7 +261,7 @@ int main(int argc, char **argv)
 	if (AscDec)
 		print_coords(location_ascdec(Loc, sun));
 	if (Moon)
-		printf("%f\n", 100.*moon_phase(Now));
+		printf("%f\n", moon_phase(Now));
 
 	return 0;
 }

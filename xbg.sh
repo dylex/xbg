@@ -6,8 +6,6 @@ setroot="fvwm-root -r"
 #setroot="xv -root +noresetroot -quit"
 
 img=/tmp/xbg.xpm
-lockfile -r0 $img.lock || exit $?
-trap "rm -f $img.lock" EXIT
 dir=`dirname $0`
 [ "$dir" ] && dir=$dir/
 gimp="gimp-console -i -c --batch-interpreter plug-in-script-fu-eval"
@@ -32,6 +30,8 @@ if [ "$edit" ] ; then
 	echo $cmd
 	exec gimp -b "$cmd" -b "(gimp-display-new 1)"
 fi
+lockfile -r0 $img.lock || exit $?
+trap "rm -f $img.lock" EXIT
 $gimp -b "$cmd (gimp-quit 1)" -b "(gimp-quit 1)" || exit 1
 [ -f "$img.0" ] || exit 1
 i=0

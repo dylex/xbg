@@ -13,8 +13,8 @@
 	 (cond
 	  ((null? x) ())
 	  ((pair? x) (cons
-		      (m (mapcar car l))
-		      (m (mapcar cdr l))))
+		      (m (map car l))
+		      (m (map cdr l))))
 	  (#t (apply f l)))))))
    (m l)))))
 
@@ -38,6 +38,48 @@
   ((< x -180) (degnorm (+ x 360)))
   (#t x)))
 
+(define (srt s r t p)
+ (let ((x (* (car p) (if (pair? s) (car s) s)))
+       (y (* (cdr p) (if (pair? s) (cdr s) s))))
+  (cons 
+   (+ (car t) (- (* x (cos r)) (* y (sin r))))
+   (+ (cdr t) (+ (* x (sin r)) (* y (cos r)))))))
+
+(define (dot p1 p2)
+ (+ (* (car p1) (car p2)) (* (cdr p1) (cdr p2))))
+
+(define (for-seq n f)
+ (letrec ((loop (lambda (i)
+		 (if (< i n) (begin
+			      (f i)
+			      (loop (succ i)))))))
+  (loop 0)))
+
+(define (point-array-set! a i p)
+ (vector-set! a (* 2 i) (car p))
+ (vector-set! a (succ (* 2 i)) (cdr p)))
+
+(define (make-point-array l)
+ (if (pair? l)
+  (let* ((n (length l))
+	 (a (make-point-array n)))
+   (letrec ((fill (lambda (i l)
+		   (if (not (null? l)) 
+		    (begin
+		     (point-array-set! a i (car l))
+		     (fill (succ i) (cdr l)))))))
+    (fill 0 l))
+   a)
+  (make-vector (* 2 l) 0.0)))
+
+(define (maparray f a)
+ (for-seq (length a) 
+  (lambda (i) (vector-set! a i (f (vector-ref a i)))))
+ a)
+
+(define (frand a b)
+ (+ a (* (rand) (/ (- b a) 2147483647.0))))
+
 (define (drawable-size d)
  (if d
   (cons
@@ -48,11 +90,52 @@
 (define (get-image-layer img l)
  (let* ((layers (gimp-image-get-layers img))
         (n (if (>= l 0) l (+ (car layers) l))))
-  (aref (cadr layers) n)))
+  (vector-ref (cadr layers) n)))
 
 (define (notempty? x) (and x (not (equal? "" x))))
 
 (define (%d x) (number->string x 10))
+
+(define (draw-tree img draw x0 y0 w0 l0)
+ (gimp-image-undo-group-start img)
+ (let* ((boxa (make-point-array 4)))
+  (gimp-context-set-foreground '(199 126 52))
+  (gimp-context-set-gradient "Wood 1")
+  (letrec 
+   ((draw-branch 
+     (lambda (p w a)
+      (let* ((l (* l0 (+ 0.5 (/ w w0)) (frand 0.75 1.25)))
+	     (w1 (* w (frand 0.85 0.9)))
+	     (p1 (srt l a p '(0 . -1)))
+	     (p0l (srt w a p '(-1 . 0)))
+	     (p0r (srt w a p '(1 . 0)))
+	     (p1l (srt w1 a p1 '(-1 . -0.5)))
+	     (p1r (srt w1 a p1 '(1 . -0.5)))
+	     (prd (mapall - p1r p0r))
+	     (dpr (/ (dot (mapall - p0l p0r) prd) (dot prd prd)))
+	     (pro (srt dpr 0 p0r prd))
+	    )
+       (if (> w1 (frand 0.5 2.0))
+	(if (or (= w w0) (zero? (rand 5)))
+	 (draw-branch p1 w1 (+ (* 0.8 a) (frand -0.2 0.2)))
+	 (let ((f (* 0.6 (sin (frand -2 2)))))
+	  (draw-branch p1 (* w1 (min 1 (+ 1 f))) (+ (* 0.9 a) f (frand -0.9 -0.3)))
+	  (draw-branch p1 (* w1 (min 1 (- 1 f))) (+ (* 0.9 a) f (frand 0.3 0.9))))))
+       (point-array-set! boxa 0 p0l)
+       (point-array-set! boxa 1 p0r)
+       (point-array-set! boxa 2 p1r)
+       (point-array-set! boxa 3 p1l)
+       (gimp-free-select img 8 boxa CHANNEL-OP-REPLACE TRUE FALSE 0)
+       (if (zero? (car (gimp-selection-is-empty img)))
+       	(gimp-edit-blend draw CUSTOM-MODE NORMAL-MODE GRADIENT-LINEAR 100 0 REPEAT-NONE FALSE FALSE 1 0 FALSE 
+	 (car p0l) (cdr p0l)
+	 (car pro) (cdr pro))
+	;(gimp-edit-fill draw FOREGROUND-FILL)
+       )
+    ))))
+   (draw-branch (cons x0 y0) w0 0)))
+ (gimp-selection-none img)
+ (gimp-image-undo-group-end img))
 
 (define (xbg out nout dim sunpos weather)
  (let* ((w (car dim))
@@ -91,8 +174,8 @@
 				 (  90 1   . 1)
 				 ( 180 0.5 . 1)))))
 
-	(sunalt (nth 0 sunpos))
-	(sunasc (nth 2 sunpos))
+	(sunalt (list-ref sunpos 0))
+	(sunasc (list-ref sunpos 2))
 	(am (> sunasc 0))
 	(sunloc (ascpos sunasc))
        )
@@ -102,26 +185,26 @@
 	 (grad (car (gimp-gradient-new "xbg")))
 	 (gstart sunloc)
 	 (gend (mapall - '(1 . 1) gstart))
-	 (gcs (pwi sunalt (list
-			   (cons -90  '(( 20  20  80) ( 15  15  60) ( 15 15 60)))
-			   (cons -32  '(( 40  40 100) ( 15  15  80) ( 15 15 60)))
-			   (cons -10 (if am
+	 (gcs (pwi sunalt `(
+			   (-90 . (( 20  20  80) ( 15  15  60) ( 15 15 60)))
+			   (-32 . (( 40  40 100) ( 15  15  80) ( 15 15 60)))
+			   (-10 . ,(if am
 				      '(( 40  40 140) ( 40  40 120) ( 40 40  80))
 				      '((140 100 180) ( 70  60 120) ( 40 50 100))))
-			   (cons  -5 (if am
+			   (-5 . ,(if am
 				      '((200 200 170) (100 100 140) ( 40  40 100))
 				      '((230 150 240) (100 100 200) ( 80 120 180))))
-			   (cons   0 (if am
+			   (0 . ,(if am
 				      '((240 240  80) (140 150 170) ( 80 100 160))
 				      '((250 200 190) ( 80 160 240) ( 70 140 210))))
-			   (cons   8 (if am
+			   (8 . ,(if am
 				      '((240 250 170) (170 200 210) (100 130 200))
 				      '((185 190 235) ( 70 170 250) ( 55 180 250))))
-			   (cons  16 (if am
+			   (16 . ,(if am
 				      '((230 230 235) (170 220 250) (100 150 220))
 				      '((170 180 220) ( 62 191 250) ( 70 200 255))))
-			   (cons  32  '(( 60 190 240) (100 200 255) (100 170 250)))
-			   (cons  90  '((120 200 255) (140 200 250) (150 220 250)))))))
+			   (32 . (( 60 190 240) (100 200 255) (100 170 250)))
+			   (90 . ((120 200 255) (140 200 250) (150 220 250)))))))
    (gimp-image-add-layer img bg 0)
    (gimp-gradient-segment-range-split-uniform grad 0 0 2)
    (gimp-gradient-segment-set-left-color  grad 0 (car   gcs) 100)
@@ -156,11 +239,11 @@
    )
   )
   
-  (let* ((pom (/ (nth 4 sunpos) 100))
+  (let* ((pom (list-ref sunpos 4))
 	 (pomn 24)
-	 (pomi (trunc (fmod (+ (* pomn (/ (succ pom) 2)) 0.5) pomn)))
+	 (pomi (modulo (inexact->exact (round (* pomn (succ (/ pom 360))))) pomn))
 	 (moon (add-img (string-append "moon-" (%d pomi))))
-	 (moonasc (degnorm (+ sunasc (* 180 (succ pom)))))
+	 (moonasc (degnorm (+ sunasc pom)))
 	 (moonpos (mapall + (mapall * (ascpos moonasc) (mapall - '(1 . 1) (mapall + (pix (drawable-size moon)) (mapall * '(2 . 2) border)))) border))
 	 (moonopa (pwi sunalt '((-32 . 100) (16 . 25)))))
    (gimp-image-add-layer img moon -1)
@@ -171,16 +254,15 @@
 
   (if (notempty? weather)
    (begin
-    (if (> (nth 4 weather) 0)
-     (let* ((cp (nth 4 weather))
-	    (wspd (nth 6 weather))
-	    (wdir (nth 7 weather))
+    (if (> (list-ref weather 4) 0)
+     (let* ((cp (list-ref weather 4))
+	    (wspd (list-ref weather 6))
+	    (wdir (list-ref weather 7))
 	    (bg (get-image-layer img -1))
 	    (bghist (gimp-histogram bg HISTOGRAM-VALUE 0 255))
 	    (cloud (car (gimp-layer-new img w h RGBA-IMAGE "cloud" 100 NORMAL-MODE))))
       (gimp-image-add-layer img cloud -1)
-      (plug-in-plasma RUN-NONINTERACTIVE img cloud (rand) (/ w 800))
-      (gimp-desaturate cloud)
+      (plug-in-solid-noise RUN-NONINTERACTIVE img cloud 0 0 (rand) 15 (/ w 500) (/ h 300))
       (plug-in-normalize RUN-NONINTERACTIVE img cloud)
       ;(plug-in-solid-noise RUN-NONINTERACTIVE img cloud 0 0 (rand) 0 (/ w 120) (/ h 120))
       (plug-in-colortoalpha RUN-NONINTERACTIVE img cloud '(0 0 0))
@@ -188,16 +270,16 @@
       (gimp-levels cloud HISTOGRAM-ALPHA 
        (- 128 (* (/ 256 *pi*) (asin (- (/ cp 50) 1)))) 255
        ;(pwi cp '((0 . 255) (5 . 192) (10 . 160) (33 . 128) (66 . 64) (75 . 0))) 255
-       (pow 10 (* 0.6 (pow (/ cp 100) 2)))
-       ;(pow 10 (pwi cp '((75 . 0) (100 . 0.6))))
+       (expt 10 (* 0.6 (expt (/ cp 100) 2)))
+       ;(expt 10 (pwi cp '((75 . 0) (100 . 0.6))))
        0 255)
       (plug-in-mblur RUN-NONINTERACTIVE img cloud 0 (* 1 wspd) (+ 90 wdir) 0 0)
      ))
 
-    (if (> (nth 5 weather) 0)
-     (let* ((rp (nth 5 weather))
-	    (wspd (nth 6 weather))
-	    (wdir (nth 7 weather))
+    (if (> (list-ref weather 5) 0)
+     (let* ((rp (list-ref weather 5))
+	    (wspd (list-ref weather 6))
+	    (wdir (list-ref weather 7))
 	    (bowloc (mapall - '(1 . 1) sunloc))
 	    (rain (car (gimp-layer-new img w h RGBA-IMAGE "rain" 100 ADDITION-MODE))))
       (gimp-image-add-layer img rain -1)
@@ -205,7 +287,7 @@
       (plug-in-randomize-hurl RUN-NONINTERACTIVE img rain 1 1 FALSE (rand))
       (gimp-hue-saturation rain ALL-HUES 0 0 -90)
       (plug-in-mblur RUN-NONINTERACTIVE img rain 0 (* 1 wspd) (+ 90 wdir) 0 0)
-      (gimp-levels rain HISTOGRAM-VALUE 0 255 (pow 10 (- (/ rp 50) 1)) 0 255)
+      (gimp-levels rain HISTOGRAM-VALUE 0 255 (expt 10 (- (/ rp 50) 1)) 0 255)
       (gimp-context-set-gradient "prism")
       (if (> sunalt 0)
        (gimp-edit-blend rain CUSTOM-MODE COLOR-MODE GRADIENT-RADIAL 90 75 REPEAT-NONE FALSE FALSE 0 0 FALSE
@@ -242,10 +324,10 @@
        (gimp-layer-set-offsets wcond (- w (+ 25 (car wcsize))) 0)
       )))
 
-    (let* ((hit (nth 2 weather))
-	   (lot (nth 1 weather))
-	   (curt (nth 3 weather))
-	   (pop (nth 5 weather))
+    (let* ((hit (list-ref weather 2))
+	   (lot (list-ref weather 1))
+	   (curt (list-ref weather 3))
+	   (pop (list-ref weather 5))
 	   (ti (lambda (lo hi) (imap curt lot hit lo hi)))
 	   (hic '(255 0 0))
 	   (loc '(0 0 255))
@@ -256,24 +338,22 @@
 	   (lo (add-text (%d lot) (cons x loy) '(1 . 1) loc 20))
 	   (hilow (- x (max (car (gimp-drawable-width lo)) (car (gimp-drawable-width hi)))))
 	   (popl (if (> pop 0) (add-text (%d pop) (cons (min (- w 27) (- hilow 3)) loy) '(1 . 1) '(0 255 0) 10)))
-	   (cur (add-text (%d curt) (cons (- hilow 4) (/ bord 2)) (cons 1 0.5) (ti loc hic) 20)))
+	   (cur (add-text (%d curt) (cons (- hilow 4) (/ bord 2)) '(1 . 0.5) (ti loc hic) 20)))
     )
    ))
+
+  (let* ((tree (car (gimp-layer-new img w h RGBA-IMAGE "tree" 100 0))))
+   (gimp-image-add-layer img tree -1)
+   (gimp-drawable-fill tree TRANSPARENT-FILL))
 
   (if (notempty? out)
    (let ((draw (car (gimp-image-flatten img)))
    	  (tw w)
    	  (nw (/ w nout)))
-    (letrec
-     ((save-part
-       (lambda (n)
-	(let ((outn (string-append out "." (%d n))))
-	 (file-xpm-save RUN-NONINTERACTIVE img draw outn outn 0)
-	 (if (< (succ n) nout)
-	  (begin
-	   (gimp-image-crop img (- w (* (succ n) nw)) h nw 0)
-	   (save-part (succ n))))))))
-     (save-part 0))))
+    (for-seq nout (lambda (n)
+     (if (> n 0) (gimp-image-crop img (- w (* (succ n) nw)) h nw 0))
+     (let ((outn (string-append out "." (%d n))))
+      (file-xpm-save RUN-NONINTERACTIVE img draw outn outn 0))))))
 
   (gimp-image-undo-enable img)
   img))
