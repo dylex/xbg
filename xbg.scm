@@ -342,9 +342,9 @@
     )
    ))
 
-  (let* ((tree (car (gimp-layer-new img w h RGBA-IMAGE "tree" 100 0))))
-   (gimp-image-add-layer img tree -1)
-   (gimp-drawable-fill tree TRANSPARENT-FILL))
+;  (let* ((tree (car (gimp-layer-new img w h RGBA-IMAGE "tree" 100 0))))
+;   (gimp-image-add-layer img tree -1)
+;   (gimp-drawable-fill tree TRANSPARENT-FILL))
 
   (if (notempty? out)
    (let ((draw (car (gimp-image-flatten img)))
