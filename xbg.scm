@@ -361,7 +361,7 @@
 	     (wcsize (if wcond (mapall (lambda (x) (* x (/ bord (cdr wcsize)))) wcsize))))
        (gimp-image-add-layer img wcond nl)
        (gimp-layer-scale wcond (car wcsize) (cdr wcsize) 1)
-       (gimp-layer-set-offsets wcond (- (car xl) (/ (car wcsize) 2)) 0)
+       (gimp-layer-set-offsets wcond (- (car xl) (car wcsize)) 0)
       ))
      (gimp-image-add-layer img templine nl)
      (gimp-layer-set-offsets templine px 0)
