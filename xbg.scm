@@ -362,6 +362,8 @@
        (gimp-image-add-layer img wcond nl)
        (gimp-layer-scale wcond (car wcsize) (cdr wcsize) 1)
        (gimp-layer-set-offsets wcond (- (car xl) (car wcsize)) 0)
+       (if (not (null? (cdr wcondicon)))
+	(gimp-layer-set-opacity wcond (cadr wcondicon)))
       ))
      (gimp-image-add-layer img templine nl)
      (gimp-layer-set-offsets templine px 0)

@@ -126,7 +126,7 @@ my $condicon;
 $condicon = shift @condicon until $condicon;
 my ($cond) = $condicon =~ /\/(\w*)\.jpg$/;
 $cond ||= 'none';
-$cond =~ s/([1-9]|10)0$//;
+$cond =~ s/([1-9]|10)0$/ ${1}0/;
 
 print <<EOF;
 $cond
