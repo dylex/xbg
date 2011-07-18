@@ -6,6 +6,7 @@ use LWP::UserAgent;
 use POSIX qw(strftime);
 use XML::XPath;
 use Getopt::Std;
+#use Time::Piece;
 
 our ($opt_x, $opt_n, $opt_f);
 getopts('nfx:');
@@ -59,26 +60,67 @@ else
 
 sub get
 {
-	my $r = $xp->find(@_);
-	#die "@_ isn't a literal: $r" . ref($r) unless $r->isa('XML::XPath::Literal') || $r->isa('XML::XPath::Number');
-	$r
+	my $r = $xp->findnodes(@_);
+	wantarray 
+		? map { $_->string_value } $r->get_nodelist
+		: $r->get_node(1)->string_value
 }
 
-my $maxt = get('//data/parameters/temperature[@type="maximum"]/value[1]/text()') || 0;
-my $mint = get('//data/parameters/temperature[@type="minimum"]/value[1]/text()') || 0;
-my $temp = get('//data/parameters/temperature[@type="hourly"]/value[1]/text()') || 0;
-my $pop = get('//data/parameters/probability-of-precipitation[@type="12 hour"]/value[1]/text()') || 0;
-my $cloud = get('//data/parameters/cloud-amount[@type="total"]/value[1]/text()') || 0;
-my $condicon = get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[1]/text()') || get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link[2]/text()');
-my $windspeed = get('//data/parameters/wind-speed[@type="sustained"]/value[1]/text()');
-my $winddir = get('//data/parameters/direction[@type="wind"]/value[1]/text()');
+my %tl_cache;
+sub get_tl($)
+{
+	my ($tl) = @_;
+	return $tl_cache{$tl} if exists $tl_cache{$tl};
+	my @ts = get('//data/time-layout[layout-key="'.$tl.'"]/start-valid-time');
+	#@ts = map { Time::Piece->strptime($_, '%Y-%m-%dT%T%z')->epoch } @ts;
+	$tl_cache{$tl} = \@ts;
+	@ts
+}
+
+sub get_tv
+{
+	my $r = $xp->findnodes(@_);
+	my $n = $r->size;
+	return if !$n;
+	die "too many @_" if $n > 1;
+	$r = $r->get_node(1);
+	my $tl = $r->getAttribute("time-layout") or die "no time-layout in @_";
+	my @ts = get_tl($tl);
+	my %r;
+	for my $v ($r->getChildNodes)
+	{
+		next unless $v->getName eq 'value';
+		die "time-series mismatch" unless @ts;
+		$r{shift @ts} = $v->string_value;
+	}
+	die "time-series mismatch" if @ts;
+	%r
+}
+
+my %maxt = get_tv('//data/parameters/temperature[@type="maximum"]');
+my %mint = get_tv('//data/parameters/temperature[@type="minimum"]');
+my @temp = get('//data/parameters/temperature[@type="hourly"]/value');
+my $pop = get('//data/parameters/probability-of-precipitation[@type="12 hour"]/value[1]');
+my $cloud = get('//data/parameters/cloud-amount[@type="total"]/value[1]') || 0;
+my @condicon = get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link');
+my $windspeed = get('//data/parameters/wind-speed[@type="sustained"]/value[1]');
+my $winddir = get('//data/parameters/direction[@type="wind"]/value[1]');
+
+my %ext = (%maxt, %mint);
+my @ext = sort keys %ext;
+@ext = @ext{@ext};
+
+my $condicon;
+$condicon = shift @condicon until $condicon;
 my ($cond) = $condicon =~ /\/(\w*)\.jpg$/;
 $cond ||= 'none';
 $cond =~ s/([1-9]|10)0$//;
 
 print <<EOF;
 $cond
-$mint $maxt $temp
-$cloud $pop
+@ext
+@temp
+$cloud
+$pop
 $windspeed $winddir
 EOF
