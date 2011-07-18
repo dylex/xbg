@@ -252,7 +252,7 @@
    (gimp-layer-set-opacity moon moonopa)
   )
 
-  (if (notempty? weather)
+  (if (= (length weather) 6)
    (let* ((wcondicon (list-ref weather 0))
    	  (exttemp (list-ref weather 1))
    	  (curtemp (list-ref weather 2))

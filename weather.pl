@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 use strict;
 use URI;
@@ -17,6 +17,7 @@ close GEOPOS;
 my ($lat, $lon) = split ' ', $geopos;
 
 my $xp;
+my $base = '/dwml/data';
 if (defined $opt_x)
 {
 	$xp = XML::XPath->new($opt_x);
@@ -24,7 +25,8 @@ if (defined $opt_x)
 else
 {
 	my $ndfdcache = "/tmp/ndfd-cache.xml";
-	if (!$opt_n && (!-r $ndfdcache or -M $ndfdcache > 0.05 or $opt_f))
+	my $upd = (!-r $ndfdcache or -M $ndfdcache > 0.05 or $opt_f) unless $opt_n;
+	if ($upd)
 	{
 		my $time = time;
 		my $tfmt = '%Y-%m-%dT%H:%M:%S%z';
@@ -56,11 +58,19 @@ else
 		close OUT;
 	}
 	$xp = XML::XPath->new($ndfdcache);
+
+	if (!$xp->exists($base))
+	{
+		unlink $ndfdcache unless $opt_n || $upd;
+		die "Error parsing result\n";
+	}
 }
 
-sub get
+sub get($)
 {
-	my $r = $xp->findnodes(@_);
+	my $p = shift;
+	my $r = $xp->findnodes($base.$p);
+	return unless defined $r;
 	wantarray 
 		? map { $_->string_value } $r->get_nodelist
 		: $r->get_node(1)->string_value
@@ -71,15 +81,17 @@ sub get_tl($)
 {
 	my ($tl) = @_;
 	return $tl_cache{$tl} if exists $tl_cache{$tl};
-	my @ts = get('//data/time-layout[layout-key="'.$tl.'"]/start-valid-time');
+	my @ts = get('/time-layout[layout-key="'.$tl.'"]/start-valid-time');
 	#@ts = map { Time::Piece->strptime($_, '%Y-%m-%dT%T%z')->epoch } @ts;
 	$tl_cache{$tl} = \@ts;
 	@ts
 }
 
-sub get_tv
+sub get_tv($)
 {
-	my $r = $xp->findnodes(@_);
+	my $p = shift;
+	my $r = $xp->findnodes($base.$p);
+	return unless defined $r;
 	my $n = $r->size;
 	return if !$n;
 	die "too many @_" if $n > 1;
@@ -89,7 +101,7 @@ sub get_tv
 	my %r;
 	for my $v ($r->getChildNodes)
 	{
-		next unless $v->getName eq 'value';
+		next unless ($v->getName // '') eq 'value';
 		die "time-series mismatch" unless @ts;
 		$r{shift @ts} = $v->string_value;
 	}
@@ -97,14 +109,14 @@ sub get_tv
 	%r
 }
 
-my %maxt = get_tv('//data/parameters/temperature[@type="maximum"]');
-my %mint = get_tv('//data/parameters/temperature[@type="minimum"]');
-my @temp = get('//data/parameters/temperature[@type="hourly"]/value');
-my $pop = get('//data/parameters/probability-of-precipitation[@type="12 hour"]/value[1]');
-my $cloud = get('//data/parameters/cloud-amount[@type="total"]/value[1]') || 0;
-my @condicon = get('//data/parameters/conditions-icon[@type="forecast-NWS"]/icon-link');
-my $windspeed = get('//data/parameters/wind-speed[@type="sustained"]/value[1]');
-my $winddir = get('//data/parameters/direction[@type="wind"]/value[1]');
+my %maxt = get_tv('/parameters/temperature[@type="maximum"]');
+my %mint = get_tv('/parameters/temperature[@type="minimum"]');
+my @temp = get('/parameters/temperature[@type="hourly"]/value');
+my $pop = get('/parameters/probability-of-precipitation[@type="12 hour"]/value[1]');
+my $cloud = get('/parameters/cloud-amount[@type="total"]/value[1]') || 0;
+my @condicon = get('/parameters/conditions-icon[@type="forecast-NWS"]/icon-link');
+my $windspeed = get('/parameters/wind-speed[@type="sustained"]/value[1]');
+my $winddir = get('/parameters/direction[@type="wind"]/value[1]');
 
 my %ext = (%maxt, %mint);
 my @ext = sort keys %ext;
