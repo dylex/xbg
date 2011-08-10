@@ -294,7 +294,7 @@
       (if (> sunalt 0) 
        (for-each (lambda (m)
 	(gimp-edit-blend rain CUSTOM-MODE m GRADIENT-RADIAL 50 75 REPEAT-NONE FALSE FALSE 0 0 FALSE
-	 (posx bowloc) (posy bowloc) (posx bowloc) (+ 400 (posy bowloc))))
+	 (posx bowloc) (posy bowloc) (posx bowloc) (+ (posy bowloc) (/ h 2))))
 	 (list SATURATION-MODE COLOR-MODE)))
      ))
 
