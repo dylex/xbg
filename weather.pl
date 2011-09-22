@@ -42,6 +42,7 @@ else
 				'product' => 'time-series',
 				'begin' => $begin,
 				'end' => $end,
+				'Unit' => 'e',
 				'maxt' => 'maxt',
 				'mint' => 'mint',
 				'temp' => 'temp',
