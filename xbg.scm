@@ -390,7 +390,7 @@
     (for-seq nout (lambda (n)
      (if (> n 0) (gimp-image-crop img (- w (* (succ n) nw)) h nw 0))
      (let ((outn (string-append out "." (%d n))))
-      (file-xpm-save RUN-NONINTERACTIVE img draw outn outn 0))))))
+      (file-png-save-defaults RUN-NONINTERACTIVE img draw outn outn))))))
 
   (gimp-image-undo-enable img)
   img))
