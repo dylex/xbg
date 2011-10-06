@@ -55,7 +55,9 @@ else
 		my $got = $LWP->get($uri);
 		die $got->status_line unless $got->is_success;
 		open OUT, '>', $ndfdcache or die "$ndfdcache: $!\n";
-		print OUT $got->content;
+		my $content = $got->decoded_content;
+		$content =~ s{^(.*<br />\n)*(?=<\?xml)}{};
+		print OUT $content;
 		close OUT;
 	}
 	$xp = XML::XPath->new($ndfdcache);
@@ -71,7 +73,7 @@ sub get($)
 {
 	my $p = shift;
 	my $r = $xp->findnodes($base.$p);
-	return unless defined $r;
+	return unless $r;
 	wantarray 
 		? map { $_->string_value } $r->get_nodelist
 		: $r->get_node(1)->string_value
@@ -116,17 +118,17 @@ my @temp = get('/parameters/temperature[@type="hourly"]/value');
 my $pop = get('/parameters/probability-of-precipitation[@type="12 hour"]/value[1]');
 my $cloud = get('/parameters/cloud-amount[@type="total"]/value[1]') || 0;
 my @condicon = get('/parameters/conditions-icon[@type="forecast-NWS"]/icon-link');
-my $windspeed = get('/parameters/wind-speed[@type="sustained"]/value[1]');
+my $windspeed = get('/parameters/wind-speed[@type="sustained"]/value[1]') || 0;
 my $winddir = get('/parameters/direction[@type="wind"]/value[1]');
 
 my %ext = (%maxt, %mint);
 my @ext = sort keys %ext;
 @ext = @ext{@ext};
 
-my $condicon;
-$condicon = shift @condicon until $condicon;
-my ($cond) = $condicon =~ /\/(\w*)\.jpg$/;
+my $cond;
+$cond = shift @condicon while @condicon && !$cond;
 $cond ||= 'none';
+$cond =~ s/\.jpg$//;
 $cond =~ s/([1-9]|10)0$/ ${1}0/;
 
 print <<EOF;
