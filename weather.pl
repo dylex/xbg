@@ -128,7 +128,7 @@ my @ext = sort keys %ext;
 my $cond;
 $cond = shift @condicon while @condicon && !$cond;
 $cond ||= 'none';
-$cond =~ s/\.jpg$//;
+$cond =~ s/^.*\/(\w*)\.jpg$/$1/;
 $cond =~ s/([1-9]|10)0$/ ${1}0/;
 
 print <<EOF;
