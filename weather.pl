@@ -8,8 +8,8 @@ use XML::XPath;
 use Getopt::Std;
 #use Time::Piece;
 
-our ($opt_x, $opt_n, $opt_f);
-getopts('nfx:');
+our ($opt_x, $opt_n, $opt_f, $opt_v);
+getopts('nfvx:');
 
 open GEOPOS, '<', "$ENV{HOME}/.geopos" or open GEOPOS, '<', '/etc/geopos' or die "can't get geopos\n";
 my ($geopos) = <GEOPOS>;
@@ -34,7 +34,8 @@ else
 		my $end = strftime($tfmt, localtime($time+162000));
 
 		my $LWP = LWP::UserAgent->new;
-		my $uri = URI->new('http://www.weather.gov/forecasts/xml/SOAP_server/ndfdXMLclient.php');
+		my $uri = URI->new('http://graphical.weather.gov/xml/SOAP_server/ndfdXMLclient.php');
+		#my $uri = URI->new('http://www.weather.gov/forecasts/xml/SOAP_server/ndfdXMLclient.php');
 		#my $uri = URI->new('http://www.weather.gov/forecasts/xml/sample_products/browser_interface/ndfdXMLclient.php');
 		$uri->query_form(
 				'lat' => $lat,
@@ -52,6 +53,7 @@ else
 				'wdir' => 'wdir',
 				'wx' => 'wx',
 				'icons' => 'icons');
+		print "$uri\n" if $opt_v;
 		my $got = $LWP->get($uri);
 		die $got->status_line unless $got->is_success;
 		open OUT, '>', $ndfdcache or die "$ndfdcache: $!\n";
