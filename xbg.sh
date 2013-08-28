@@ -2,7 +2,7 @@
 w=1920
 h=1200
 displays=":0.0"
-setroot="fvwm-root -r"
+setroot="hsetroot -center"
 #setroot="xv -root +noresetroot -quit"
 
 img=/tmp/xbg.png
