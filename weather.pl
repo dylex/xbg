@@ -31,7 +31,7 @@ else
 		my $time = time;
 		my $tfmt = '%Y-%m-%dT%H:%M:%S%z';
 		my $begin = strftime($tfmt, localtime($time));
-		my $end = strftime($tfmt, localtime($time+162000));
+		my $end = strftime($tfmt, localtime($time+432100));
 
 		my $LWP = LWP::UserAgent->new;
 		my $uri = URI->new('http://graphical.weather.gov/xml/SOAP_server/ndfdXMLclient.php');
@@ -47,11 +47,12 @@ else
 				'maxt' => 'maxt',
 				'mint' => 'mint',
 				'temp' => 'temp',
+				'dew' => 'dew',
 				'pop12' => 'pop12',
 				'sky' => 'sky',
 				'wspd' => 'wspd',
 				'wdir' => 'wdir',
-				'wx' => 'wx',
+				#'wx' => 'wx',
 				'icons' => 'icons');
 		print "$uri\n" if $opt_v;
 		my $got = $LWP->get($uri);
@@ -117,6 +118,7 @@ sub get_tv($)
 my %maxt = get_tv('/parameters/temperature[@type="maximum"]');
 my %mint = get_tv('/parameters/temperature[@type="minimum"]');
 my @temp = get('/parameters/temperature[@type="hourly"]/value');
+my @dew = get('/parameters/temperature[@type="dew point"]/value');
 my $pop = get('/parameters/probability-of-precipitation[@type="12 hour"]/value[1]');
 my $cloud = get('/parameters/cloud-amount[@type="total"]/value[1]') || 0;
 my @condicon = get('/parameters/conditions-icon[@type="forecast-NWS"]/icon-link');
@@ -126,6 +128,7 @@ my $winddir = get('/parameters/direction[@type="wind"]/value[1]');
 my %ext = (%maxt, %mint);
 my @ext = sort keys %ext;
 @ext = @ext{@ext};
+pop @ext;
 
 my $cond;
 $cond = shift @condicon while @condicon && !$cond;
@@ -137,6 +140,7 @@ print <<EOF;
 $cond
 @ext
 @temp
+@dew
 $cloud
 $pop
 $windspeed $winddir
