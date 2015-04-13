@@ -372,7 +372,8 @@
       (begin
        (gimp-image-add-layer img templine nl)
        (gimp-layer-set-offsets templine px 0)
-       (gimp-context-set-brush "Circle (01)")
+       (gimp-context-set-brush "2. Hardness 100")
+       (gimp-context-set-brush-size 1.0)
        (gimp-context-set-paint-method "gimp-paintbrush")
        (maketemp 0 curtemp)
        (gimp-image-add-vectors img tempvect -1)

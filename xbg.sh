@@ -36,7 +36,7 @@ fi
 lockfile -r0 $img.lock || exit $?
 rm -f $img.0
 trap "rm -f $img.lock" EXIT
-$gimp -b "$cmd (gimp-quit 1)" -b "(gimp-quit 1)" || exit 1
+$gimp -b "$cmd (gimp-quit TRUE)" -b "(gimp-quit TRUE)" || exit 1
 [[ -f $img.0 ]] || exit 1
 i=0
 for d in $displays ; do
