@@ -1,6 +1,4 @@
 #!/bin/bash
-w=1920
-h=1200
 displays=":0.0"
 setroot="hsetroot -center"
 #setroot="xv -root +noresetroot -quit"
@@ -20,6 +18,10 @@ while getopts 'ew:h:d:f:S:W:n' opt ; do case $opt in
 	n) gimp="echo $gimp" ;;
 	*) exit 1
 esac ; done
+if [[ -z $w || -z $h ]] ; then
+	set -- $(xrandr -q | head -1 | sed -n 's/^.* current \([0-9]\+\) x \([0-9]\+\),.*/\1 \2/p')
+	: ${w:=$1} ${h:=$2}
+fi
 nd=0 ; for d in $displays ; do nd=$(($nd+1)) ; done
 [[ $sunpos ]] || sunpos=`${dir}sunpos -adm -f%s $time`
 [[ $weather ]] || weather=`${dir}weather.pl`
