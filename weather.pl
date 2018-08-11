@@ -34,7 +34,7 @@ else
 		my $end = strftime($tfmt, localtime($time+432100));
 
 		my $LWP = LWP::UserAgent->new;
-		my $uri = URI->new('http://graphical.weather.gov/xml/SOAP_server/ndfdXMLclient.php');
+		my $uri = URI->new('https://graphical.weather.gov/xml/SOAP_server/ndfdXMLclient.php');
 		#my $uri = URI->new('http://www.weather.gov/forecasts/xml/SOAP_server/ndfdXMLclient.php');
 		#my $uri = URI->new('http://www.weather.gov/forecasts/xml/sample_products/browser_interface/ndfdXMLclient.php');
 		$uri->query_form(
@@ -119,11 +119,11 @@ my %maxt = get_tv('/parameters/temperature[@type="maximum"]');
 my %mint = get_tv('/parameters/temperature[@type="minimum"]');
 my @temp = get('/parameters/temperature[@type="hourly"]/value');
 my @dew = get('/parameters/temperature[@type="dew point"]/value');
-my $pop = get('/parameters/probability-of-precipitation[@type="12 hour"]/value[1]');
-my $cloud = get('/parameters/cloud-amount[@type="total"]/value[1]') || 0;
+my @pop = get('/parameters/probability-of-precipitation[@type="12 hour"]/value');
+my @cloud = get('/parameters/cloud-amount[@type="total"]/value');
 my @condicon = get('/parameters/conditions-icon[@type="forecast-NWS"]/icon-link');
-my $windspeed = get('/parameters/wind-speed[@type="sustained"]/value[1]') || 0;
-my $winddir = get('/parameters/direction[@type="wind"]/value[1]');
+my @windspeed = get('/parameters/wind-speed[@type="sustained"]/value');
+my @winddir = get('/parameters/direction[@type="wind"]/value');
 
 my %ext = (%maxt, %mint);
 my @ext = sort keys %ext;
@@ -141,7 +141,8 @@ $cond
 @ext
 @temp
 @dew
-$cloud
-$pop
-$windspeed $winddir
+@cloud
+@pop
+@windspeed
+@winddir
 EOF
