@@ -248,7 +248,7 @@
 	 (moonopa (pwi sunalt '((-32 . 100) (16 . 25)))))
    (gimp-image-add-layer img moon -1)
    (gimp-layer-set-offsets moon (posx moonpos) (posy moonpos))
-   (gimp-layer-set-mode moon LIGHTEN-ONLY)
+   (gimp-layer-set-mode moon LAYER-MODE-LIGHTEN-ONLY)
    (gimp-layer-set-opacity moon moonopa)
   )
 
