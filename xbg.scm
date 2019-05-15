@@ -279,7 +279,7 @@
        (expt 10 (* 0.6 (expt (/ cp 100) 2)))
        ;(expt 10 (pwi cp '((75 . 0) (100 . 0.6))))
        0 255)
-      (plug-in-mblur RUN-NONINTERACTIVE img cloud 0 (* 1 (car windspd)) (+ 90 (car winddir)) 0 0)
+      (plug-in-mblur RUN-NONINTERACTIVE img cloud 0 (* 1 (car windspd)) (modulo (+ 90 (car winddir)) 360) 0 0)
      ))
 
     (if (> (car rainp) 0)
@@ -290,7 +290,7 @@
       (gimp-drawable-fill rain TRANSPARENT-FILL)
       (plug-in-randomize-hurl RUN-NONINTERACTIVE img rain 2 1 FALSE (rand))
       (gimp-hue-saturation rain ALL-HUES 0 0 -90)
-      (plug-in-mblur RUN-NONINTERACTIVE img rain 0 (* 1 (car windspd)) (+ 90 (car winddir)) 0 0)
+      (plug-in-mblur RUN-NONINTERACTIVE img rain 0 (* 1 (car windspd)) (modulo (+ 90 (car winddir)) 360) 0 0)
       (gimp-levels rain HISTOGRAM-ALPHA 0 255 (expt 10 (/ rp 100)) 0 255)
       (gimp-context-set-gradient "prism")
       (if (> sunalt 0) 
