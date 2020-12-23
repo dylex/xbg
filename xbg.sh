@@ -24,7 +24,7 @@ if [[ -z $w || -z $h ]] ; then
 fi
 nd=0 ; for d in $displays ; do nd=$(($nd+1)) ; done
 [[ $sunpos ]] || sunpos=`${dir}sunpos -adm -f%s $time`
-[[ $weather ]] || weather=`${dir}weather.pl`
+[[ $weather ]] || weather=`${dir}weather.py`
 args="\"$img\" $nd '($(($w*$nd)) . $h) '(${sunpos//
 / }) '((${weather//
 /) (}))"

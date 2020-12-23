@@ -7,10 +7,7 @@ Requirements:
  - gimp 2.2
  - gcc
  - fvwm-root, xv, or other program to set the X root image
- - perl with modules:
-   - URI
-   - LWP
-   - XML::XPath
+ - python with packages in requirements.txt
 
 Instructions:
  - Run make.  It should build sunpos and install prism.ggr in
