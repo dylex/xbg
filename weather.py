@@ -46,6 +46,9 @@ def loadURL(url, cache, expire):
     if 'v' in OPTS:
         print(url)
     res = requests.get(url, headers=HEADERS)
+    j = res.json()
+    if 'status' in j and j['status'] >= 300:
+        raise ValueError(j)
     with open(path, 'wb') as c:
         c.write(res.content)
     with open(path+'.url', 'w') as k:
@@ -71,7 +74,7 @@ def parseISO(x):
     return (s, e)
 
 def parseValue(v):
-    if not v: return
+    if not v or v['value'] is None: return
     return UOMs[stripprefix('unit:',v['unitCode'])](v['value'])
 
 def parseValues(v):
@@ -107,7 +110,7 @@ if __name__ == '__main__':
     forecast = loadURL(urls['forecastGridData'], 'forecast', 4321)['properties']
     now = datetime.datetime.now(tz=datetime.timezone.utc)
 
-    print(obs['icon'].split('/').pop().split('?').pop(0))
+    print((obs['icon'] or '').split('/').pop().split('?').pop(0))
 
     ext = list(parseValues(forecast['maxTemperature']))
     ext.extend(parseValues(forecast['minTemperature']))
