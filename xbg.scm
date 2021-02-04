@@ -349,7 +349,7 @@
 	   (popdata (makedata 0 100 rainp))
 	   (pop (car rainp))
 	   (popside (<= (tu curt) 0.5))
-           (wcondi (map (lambda (i) (assoc i
+           (wcondi (if (not (null? wcondicon)) (assoc (car wcondicon)
 		    '((skc . "sun")		(nskc . "sun")
 		      (few . "sun")	  	(nfew . "sun")
 		      (sct . "partlysun") 	(nsct . "partlysun")
@@ -368,7 +368,7 @@
 		      (sn . "snow") 	  	(nsn . "snow")
 		      (fzra . "ice") 	  	(nfzra . "ice")
 		      (ip . "hail") 	  	(nip . "hail")
-		     ))) wcondicon))
+		     ))))
 	   )
      (if (not (null? wcondi))
       (let* ((wcond (add-img (cdr wcondi)))
