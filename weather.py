@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+from typing import Iterator, Tuple, Optional, Iterable
 
 import os
 import sys
@@ -13,33 +14,31 @@ HEADERS = {'user-agent': 'https://github.com/dylex/xbg weather'}
 CACHE_PFX = os.path.expanduser("~/.cache/xbg/weather.")
 OPTS = ''
 
-def readGeopos(path):
+def readGeopos(path: str) -> Iterator[float]:
     with open(path) as f:
         l = next(f)
     return map(float, l.strip().split(' '))
 
-def cacheFile(name):
-    return os.path.join(CACHE_DIR, name)
-
-def getCache(path, url, expire):
+def getCache(path: str, url: str, expire: float) -> Optional[dict]:
     if 'f' in OPTS:
-        return
+        return None
     try:
         with open(path+'.url', 'r') as k:
             if next(k) != url:
-                return
+                return None
         with open(path, 'r') as c:
             if 'n' not in OPTS:
                 stat = os.fstat(c.fileno())
                 if time.time() - stat.st_mtime > expire:
-                    return
+                    return None
             return json.load(c)
     except IOError as e:
         if 'n' in OPTS:
             raise e
+        return None
 
-def loadURL(url, cache, expire):
-    path = CACHE_PFX + cache
+def loadURL(url: str, key: str, expire: float) -> dict:
+    path = CACHE_PFX + key
     cache = getCache(path, url, expire)
     if cache:
         return cache
@@ -62,29 +61,31 @@ UOMs = {
     'km_h-1': lambda k: 0.62137119*k
 }
 
-def stripprefix(p, s):
+def stripprefix(p: str, s: str) -> str:
     if s.startswith(p):
         return s[len(p):]
     return s
 
-def parseISO(x):
+def parseISO(x: str) -> Tuple[datetime.datetime, datetime.datetime]:
     (s,d) = x.split('/')
-    s = isodate.parse_datetime(s)
-    e = s + isodate.parse_duration(d)
-    return (s, e)
+    t = isodate.parse_datetime(s)
+    e = t + isodate.parse_duration(d)
+    return (t, e)
 
-def parseValue(v):
-    if not v or v['value'] is None: return
+def parseValue(v: dict) -> Optional[float]:
+    if not v or v['value'] is None: return None
     return UOMs[stripprefix('unit:',v['unitCode'])](v['value'])
 
-def parseValues(v):
+Sample = Tuple[Tuple[datetime.datetime, datetime.datetime], float]
+
+def parseValues(v: dict) -> Iterator[Sample]:
     c = UOMs[stripprefix('wmoUnit:', v['uom'])]
     return ((parseISO(x['validTime']), c(x['value'])) for x in v['values'])
 
-def fmt(x):
+def fmt(x: Optional[float]) -> str:
     return '%.f'%(x) if x is not None else ''
 
-def printSamples(init, start, l, interval=datetime.timedelta(hours=1)):
+def printSamples(init: Optional[float], start: datetime.datetime, l: Iterable[Sample], interval: datetime.timedelta=datetime.timedelta(hours=1)) -> None:
     s = fmt(init)
     t = start
     for x in l:
@@ -108,7 +109,7 @@ if __name__ == '__main__':
     obs = loadURL(station+'/observations/latest', 'observation', 321)['properties']
 
     forecast = loadURL(urls['forecastGridData'], 'forecast', 4321)['properties']
-    now = datetime.datetime.now(tz=datetime.timezone.utc)
+    now = isodate.parse_datetime(obs['timestamp'])
 
     print((obs['icon'] or '').split('/').pop().split('?').pop(0))
 
