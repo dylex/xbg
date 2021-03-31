@@ -359,6 +359,7 @@
 		      (fg . "fog") 	  	(nfg . "fog")
 		      (fog . "fog") 	  	(nfog . "fog")
 		      (ra . "rain") 	  	(nra . "rain")
+		      (rain . "rain") 	  	(nrain . "rain")
 		      (shra . "rain")
 		      (hi_shwrs . "raincloudy")	(hi_nshwrs . "raincloudy")
 		      (scttsra . "lightning")   (nscttsra . "lightning")
