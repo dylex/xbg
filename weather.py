@@ -74,7 +74,7 @@ def parseISO(x: str) -> Tuple[datetime.datetime, datetime.datetime]:
 
 def parseValue(v: dict) -> Optional[float]:
     if not v or v['value'] is None: return None
-    return UOMs[stripprefix('wmoUnit:',v['unitCode'])](v['value'])
+    return UOMs[stripprefix('unit:',v['unitCode'])](v['value'])
 
 Sample = Tuple[Tuple[datetime.datetime, datetime.datetime], float]
 
