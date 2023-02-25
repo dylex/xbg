@@ -19,12 +19,12 @@ while getopts 'ew:h:d:f:S:W:n' opt ; do case $opt in
 	*) exit 1
 esac ; done
 if [[ -z $w || -z $h ]] ; then
-	set -- $(xrandr -q | head -1 | sed -n 's/^.* current \([0-9]\+\) x \([0-9]\+\),.*/\1 \2/p')
+	set -- $(xdpyinfo | sed -n '/^ *dimensions:/s/^ *dimensions: *\([0-9]\+\)x\([0-9]\+\) pixels.*/\1 \2/p')
 	: ${w:=$1} ${h:=$2}
 fi
 nd=0 ; for d in $displays ; do nd=$(($nd+1)) ; done
 [[ $sunpos ]] || sunpos=`${dir}sunpos -adm -f%s $time`
-[[ $weather ]] || weather=`${dir}weather.py`
+[[ $weather ]] || weather=`${dir}weather.py` || weather=`${dir}weather.py -n`
 args="\"$img\" $nd '($(($w*$nd)) . $h) '(${sunpos//
 / }) '((${weather//
 /) (}))"
@@ -35,10 +35,8 @@ if [[ $edit ]] ; then
 	echo $cmd
 	exec gimp -b "$cmd" -b "(gimp-display-new 1)"
 fi
-lockfile -r0 $img.lock || exit $?
-rm -f $img.0
 trap "rm -f $img.lock" EXIT
-$gimp -b "$cmd (gimp-quit TRUE)" -b "(gimp-quit TRUE)" || exit 1
+flock $img.lock $gimp -b "$cmd (gimp-quit TRUE)" -b "(gimp-quit TRUE)" || exit $?
 [[ -f $img.0 ]] || exit 1
 i=0
 for d in $displays ; do
