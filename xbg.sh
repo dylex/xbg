@@ -1,9 +1,8 @@
 #!/bin/bash
 displays=":0.0"
 setroot="hsetroot -center"
-#setroot="xv -root +noresetroot -quit"
 
-img=/tmp/xbg.png
+img=/tmp/xbg.bmp
 dir=`dirname $0`
 [[ $dir ]] && dir=$dir/
 gimp="gimp-console -i -c --batch-interpreter plug-in-script-fu-eval"
