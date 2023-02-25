@@ -149,7 +149,7 @@
 	(img (car (gimp-image-new w h RGB)))
 	(_ (gimp-image-undo-disable img))
 
-	(bord 50)
+	(bord 90)
 	(border (pix (cons bord bord)))
 	(add-img (lambda (file)
 		  (if (notempty? file)
@@ -268,7 +268,7 @@
 	    (bghist (gimp-histogram bg HISTOGRAM-VALUE 0 255))
 	    (cloud (car (gimp-layer-new img w h RGBA-IMAGE "cloud" 100 NORMAL-MODE))))
       (gimp-image-add-layer img cloud -1)
-      (plug-in-solid-noise RUN-NONINTERACTIVE img cloud 0 0 (rand) 15 (/ w 500) (/ h 300))
+      (plug-in-solid-noise RUN-NONINTERACTIVE img cloud 0 0 (rand) 15 (/ w 800) (/ h 750))
       (plug-in-normalize RUN-NONINTERACTIVE img cloud)
       ;(plug-in-solid-noise RUN-NONINTERACTIVE img cloud 0 0 (rand) 0 (/ w 120) (/ h 120))
       (plug-in-colortoalpha RUN-NONINTERACTIVE img cloud '(0 0 0))
@@ -318,7 +318,7 @@
 			  (drawext t (succ i) (cdr l)
 			     (if (= t p) n
 			       (begin
-				 (add-text (%d t) (cons (xi i lext) (ty t)) (cons (if (= i 0) 1 0) (tu t)) (tc t) (interp i 0 (pred lext) 20 5))
+				 (add-text (%d t) (cons (xi i lext) (ty t)) (cons (if (= i 0) 1 0) (tu t)) (tc t) (interp i 0 (pred lext) 28 6))
 				 (succ n))))))))
 	   (curt (car curtemp))
 	   (nl (drawext (pred curt) 0 (cons curt exttemp) 0))
@@ -414,7 +414,7 @@
        (gimp-edit-stroke-vectors templine tempvect)
       ))
      (if (> pop 0)
-      (add-text (%d pop) (cons xs (if popside (- bord 2) 2)) (cons 1 (if popside 1 0)) '(0 255 0) 10))
+      (add-text (%d pop) (cons xs (if popside (- bord 2) 2)) (cons 1 (if popside 1 0)) '(0 255 0) 14))
      )
    ))
 
