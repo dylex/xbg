@@ -108,7 +108,7 @@ if __name__ == '__main__':
     station = loadURL(urls['observationStations'], 'stations', 654321)['observationStations'][0]
     obs = loadURL(station+'/observations/latest', 'observation', 321)['properties']
 
-    forecast = loadURL(urls['forecastGridData'], 'forecast', 4321)['properties']
+    forecast = loadURL(urls['forecastGridData']+'?debug=0', 'forecast', 4321)['properties']
     now = isodate.parse_datetime(obs['timestamp'])
 
     print((obs['icon'] or '').split('/').pop().split('?').pop(0))

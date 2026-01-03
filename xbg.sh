@@ -1,6 +1,6 @@
 #!/bin/bash
 displays=":0.0"
-setroot="hsetroot -center"
+setroot="hsetroot -root -center"
 
 img=/tmp/xbg.bmp
 dir=`dirname $0`
